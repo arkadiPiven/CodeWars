@@ -1,0 +1,37 @@
+def sieve(numbers, stop):
+	p = 2
+	i = 2
+	flag = False
+	while True:
+		while p*i <= stop:
+			numbers[p*i] = -1
+			i = i + 1
+		for x in range(p, stop):
+			if numbers[x] != -1:
+				p = x
+				i = 2
+				flag = True
+				break
+		if flag:
+			continue
+		break
+	for x in range (2, stop):
+		if numbers[x] != -1:
+			print(x)
+
+
+def backwards_prime(start, stop):
+	numbers = [0]*(stop + 1)
+	sieve(numbers, stop)
+	ret = []
+	for x in range(2, stop):
+		i = str(x)
+		a = i[::-1]
+		if x == int(a):
+			ret.append(x)
+	return ret
+
+
+
+print(backwards_prime(2,100))
+
