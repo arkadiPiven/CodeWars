@@ -8,35 +8,39 @@ class Validator:
     solution = None
     total_jobs_done = 0
     lock = threading.Lock()
-    all_jobs_done = threading.Condition()
-    scheduler_empty = threading.Condition()
+    all_jobs_done = threading.Condition(lock)
+    scheduler_empty = threading.Condition(lock)
 
     def __init__(self, solution, num_of_threads):
         self.solution = solution
         self.num_of_threads = num_of_threads
         for i in range(self.num_of_threads):
-            self.threads.append(threading.Thread(target=self.get_job(), args=()))
+            th = threading.Thread(target=self.get_job)
+            self.threads.append(th)
             self.threads[i].start()
 
     def get_job(self):
         while True:
             self.lock.acquire()
             while not self.scheduler:
+                print("Going to sleep")
                 self.scheduler_empty.wait()
             job = self.scheduler.pop(0)
             self.lock.release()
-            ret_value = job.execute()
+            ret_value = job.execute(self.solution)
             if ret_value == 1:
                 return
 
     def schedule_job(self, job):
         self.lock.acquire()
         self.scheduler.append(job)
+        print(len(self.scheduler))
         if len(self.scheduler) == 1:
             self.scheduler_empty.notify()
         self.lock.release()
 
     def solve(self):
+        print('Inside solve')
         for i in range(0, 9):
             self.schedule_job(self.Row(i))
             self.schedule_job(self.Column(i))
@@ -52,7 +56,7 @@ class Validator:
         def __init__(self, start_index):
             self.start_index = start_index
 
-        def execute(self):
+        def execute(self, solution):
             return
 
     class Row(Job):
@@ -60,27 +64,37 @@ class Validator:
         def __init__(self, start_index):
             super().__init__(start_index)
 
-        def execute(self):
-            lst = []
+        def execute(self, solution):
+            dictionary = []
             for j in range(9):
-                if self.solution[i][j] in lst:
+                if solution[self.start_index][j] in dictionary:
                     return False
+                dictionary[solution[self.start_index][j]] = 1
 
     class Column(Job):
 
         def __init__(self, start_index):
             super().__init__(start_index)
 
-        def execute(self):
-            return
+        def execute(self, solution):
+            dictionary = []
+            for j in range(9):
+                if solution[j][self.start_index] in dictionary:
+                    return False
+                dictionary[solution[self.start_index][j]] = 1
 
     class Block(Job):
 
         def __init__(self, start_index):
             super().__init__(start_index)
 
-        def execute(self):
-            return
+        def execute(self, solution):
+            dictionary = []
+            for j in range(3):
+                for i in range(3):
+                    if solution[int(self.start_index / 3) * 3 + j][self.start_index % 3 + i] in dictionary:
+                        return False
+                    dictionary[solution[int(self.start_index / 3) * 3 + j][self.start_index % 3 + i]] = 1
 
     class Cyanide:
 
@@ -88,11 +102,13 @@ class Validator:
             return
 
         @staticmethod
-        def execute():
+        def execute(solution):
             return 1
 
 
 def valid_solution(solution):
+    validator = Validator(solution, 1)
+    validator.solve()
     return
 
 
